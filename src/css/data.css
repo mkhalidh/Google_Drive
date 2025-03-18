@@ -1,0 +1,95 @@
+.data{
+    flex: 1;
+    padding: 10px 0px 0px 20px;
+
+}
+
+.data__header{
+    display: flex;
+    
+    align-items: center;
+    justify-content: space-between;
+    border-bottom:1px solid lightgray ;
+    height: 40px;
+}
+
+.data__headerLeft {
+    display: flex;
+    align-items: center;
+}
+
+
+.data__headerRight svg {
+    margin: 0 10px;
+}
+
+
+
+.data__grid{
+    display: flex;
+    align-items: center;
+    margin-top: 30px;
+    margin-bottom: 30px;
+    /* max-width: 2px; */
+}
+
+.data__file{
+    text-align: center;
+    border: 1px solid lightgray;
+    margin: 10px;
+    padding: 10px 0px 0px 0px;
+    min-width: 200px;
+    border-radius: 5px;
+    /* max-width: 200px; */
+}
+
+.data__file svg{
+    font-size: 60px;
+    color: gray;
+    max-width: 60px;
+}
+.centered-image {
+    display: block; /* Ensures the image is a block element */
+    margin: 0 auto; /* Centers the image horizontally */
+    max-width: 100%; /* Ensures the image does not exceed the container width */
+}
+
+
+
+.data__file img{
+    display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.data__file p{
+    border-top: 1px solid #ccc;
+    margin-top: 5px;
+    font-size: 10px;
+    background-color: whitesmoke;
+    padding: 10px 0px;
+}
+
+.detailsRow{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom:1px solid #ccc ;
+    padding: 10px;
+}
+.detailsRow p {
+    display: flex;
+    align-items: center;
+    font-size: 13px;
+}
+
+.detailsRow p b{
+    display: flex;
+    align-items: center;
+    
+}
+
+.detailsRow svg {
+    
+    font-size: 22px;
+    margin: 10px;
+}
