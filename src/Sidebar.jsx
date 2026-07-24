@@ -8,10 +8,13 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import CloudQueueIcon from '@mui/icons-material/CloudQueue';
 import CloseIcon from '@mui/icons-material/Close';
 import { Modal } from '@mui/base';
-import { db, storage } from './firebase';
+import { db } from './firebase';
 import { DriveLogo } from './App';
 
 import firebase from 'firebase';
+
+const CLOUDINARY_CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+const CLOUDINARY_UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
 
 function formatBytes(bytes) {
   if (!bytes) return "0 B"
@@ -53,38 +56,38 @@ const Sidebar = ({ user, files }) => {
     setUploading(true);
     setUploadError(null);
 
-    const storagePath = `files/${user.uid}/${file.name}`;
+    const fileType = file.type ? file.type.split('/')[0] : 'unknown';
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
 
-    storage.ref(storagePath).put(file).then(snapshot => {
-      storage.ref(storagePath).getDownloadURL().then(url => {
-        const fileType = file.type ? file.type.split('/')[0] : 'unknown';
+    fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/auto/upload`, {
+      method: 'POST',
+      body: formData,
+    })
+      .then((res) => res.json())
+      .then((result) => {
+        if (result.error) throw new Error(result.error.message);
 
-        db.collection("myfiles").add({
+        return db.collection("myfiles").add({
           uid: user.uid,
           timestamp: firebase.firestore.FieldValue.serverTimestamp(),
           filename: file.name,
-          fileUrl: url,
-          size: snapshot._delegate.bytesTransferred,
+          fileUrl: result.secure_url,
+          size: result.bytes || file.size,
           fileType: fileType
-        }).then(() => {
-          setUploading(false)
-          setFile(null)
-          setOpen(false)
-        }).catch((error) => {
-          console.error("Error adding file metadata to Firestore: ", error);
-          setUploading(false);
-          setUploadError("Saved the file but couldn't record it. Try again.");
         });
-      }).catch((error) => {
-        console.error("Error getting download URL: ", error);
+      })
+      .then(() => {
         setUploading(false);
-        setUploadError("Upload finished but the file link failed. Try again.");
+        setFile(null);
+        setOpen(false);
+      })
+      .catch((error) => {
+        console.error("Error uploading file: ", error);
+        setUploading(false);
+        setUploadError("Couldn't upload the file. Check your connection and try again.");
       });
-    }).catch((error) => {
-      console.error("Error uploading file: ", error);
-      setUploading(false);
-      setUploadError("Couldn't reach Drive. Check your connection and try again.");
-    });
   }
 
   const handleOpen = () => {
