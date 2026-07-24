@@ -15,6 +15,7 @@ import firebase from 'firebase';
 
 const CLOUDINARY_CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
 const CLOUDINARY_UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+const MAX_STORAGE_BYTES = 100 * 1024 * 1024; // 100MB per account
 
 function formatBytes(bytes) {
   if (!bytes) return "0 B"
@@ -53,6 +54,14 @@ const Sidebar = ({ user, files }) => {
   const handleUpload = (e) => {
     e.preventDefault();
     if (!file || !user) return;
+
+    if (totalBytes + file.size > MAX_STORAGE_BYTES) {
+      setUploadError(
+        `Not enough space. ${formatBytes(remainingBytes)} left, this file is ${formatBytes(file.size)}.`
+      );
+      return;
+    }
+
     setUploading(true);
     setUploadError(null);
 
@@ -95,6 +104,9 @@ const Sidebar = ({ user, files }) => {
   }
 
   const totalBytes = files.reduce((sum, f) => sum + (f.data.size || 0), 0)
+  const remainingBytes = Math.max(0, MAX_STORAGE_BYTES - totalBytes)
+  const usagePercent = Math.min(100, (totalBytes / MAX_STORAGE_BYTES) * 100)
+  const nearLimit = usagePercent >= 90
 
   return (
     <>
@@ -161,8 +173,17 @@ const Sidebar = ({ user, files }) => {
             <CloudQueueIcon fontSize="small" />
             <span>Storage</span>
           </div>
+          <div className="sidebar__storage-bar" role="progressbar" aria-valuenow={Math.round(usagePercent)} aria-valuemin={0} aria-valuemax={100} aria-label="Storage used">
+            <div
+              className={`sidebar__storage-bar-fill${nearLimit ? ' sidebar__storage-bar-fill--warn' : ''}`}
+              style={{ width: `${usagePercent}%` }}
+            />
+          </div>
           <p className="font-sans text-xs text-ink-500 mt-2">
-            {formatBytes(totalBytes)} used · {files.length} {files.length === 1 ? 'file' : 'files'}
+            {formatBytes(totalBytes)} of {formatBytes(MAX_STORAGE_BYTES)} used
+          </p>
+          <p className="font-sans text-xs text-ink-400">
+            {files.length} {files.length === 1 ? 'file' : 'files'} · {formatBytes(remainingBytes)} left
           </p>
         </div>
       </aside>

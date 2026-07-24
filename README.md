@@ -22,7 +22,39 @@ account gets you an empty drive, not someone else's files.
   as uploads land
 - Search your own files by name
 - Download any file you've uploaded
-- Running total of files and storage used
+- **100MB storage quota per account**, with a live usage bar in the sidebar
+  (turns red past 90% used) and an upfront error if an upload would exceed it
+  — checked client-side before the upload even starts, not after it fails
+
+## How this project got here
+
+This started as a typical "Google Drive clone" tutorial project — and had
+the usual gaps that come with that: Google Sign-In was fully commented out,
+so every visitor shared one global file list, and uploads silently failed
+forever with no error shown (Firebase Storage was rejecting them since
+nobody was actually authenticated). Getting this into something worth
+linking from a resume meant closing those gaps for real, not just
+cosmetically:
+
+1. **Fixed the upload bug and added real accounts in the same change** —
+   restored Google Sign-In and scoped every file to the signed-in user's
+   UID, both in the data model and in Firestore's security rules (server-
+   enforced, not just filtered client-side). That was also the actual fix
+   for uploads never completing.
+2. **Redesigned the UI** to match real Google Drive's look and feel — white
+   surfaces, Drive's blue, the familiar "+ New" button and sidebar nav —
+   rather than a generic reskin.
+3. **Migrated file storage from Firebase Storage to Cloudinary** after
+   hitting Firebase's policy requiring the paid Blaze plan to manage
+   Storage. Cloudinary's free tier does the same job (client-side unsigned
+   uploads, no backend needed) without requiring a card.
+4. **Added a per-account storage quota** (100MB) with a real usage bar, so
+   the "account" concept means something concrete, not just "your own empty
+   folder."
+
+See `firestore.rules` for the actual access-control logic and the **Data
+model & security** section below for the one real tradeoff that came out of
+the Cloudinary migration.
 
 ## Tech stack
 
@@ -122,7 +154,7 @@ Google_Drive/
 ├── src/
 │   ├── App.jsx           # Auth state machine (sign-in/out), top-level layout
 │   ├── Header.jsx         # Search, account menu, sign-out
-│   ├── Sidebar.jsx        # Upload flow (to Cloudinary), storage summary
+│   ├── Sidebar.jsx        # Upload flow (to Cloudinary), 100MB quota + usage bar
 │   ├── Data.jsx            # Per-user file list
 │   ├── firebase.js         # Firebase init (reads VITE_FIREBASE_* env vars)
 │   └── css/                 # Component styles
