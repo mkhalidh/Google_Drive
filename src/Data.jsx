@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import ListIcon from '@mui/icons-material/List';
 import InfoIcon from '@mui/icons-material/Info';
@@ -104,7 +104,7 @@ const Data = () => {
                 {
                     files.map((file)=>{
                         return(
-                <div className="detailsRow">
+                <div className="detailsRow" key={file.id}>
 
                     <p>
                         <a href={file.data.fileUrl} target='_blank' download={file.data.filename} >

@@ -1,4 +1,4 @@
-import {React, useState} from 'react'
+import { useState } from 'react'
 import './css/sidebar.css'
 import MobileScreenShareIcon from '@mui/icons-material/MobileScreenShare';
 import DevicesIcon from '@mui/icons-material/Devices';
@@ -28,14 +28,14 @@ const Sidebar = () => {
   }
 
   const handleUpload = (e)=>{
-    event.preventDefault();
+    e.preventDefault();
     setUploading(true);
 
     storage.ref(`files/${file.name}`).put(file).then(snapshot => {
       storage.ref("files").child(file.name).getDownloadURL().then(url => {
           // Extract general file type
           const fileType = file.type ? file.type.split('/')[0] : 'unknown'; // Get the first part of the MIME type
-  
+
           // Add metadata to Firestore
           db.collection("myfiles").add({
               timestamp: firebase.firestore.FieldValue.serverTimestamp(),
@@ -43,12 +43,11 @@ const Sidebar = () => {
               fileUrl: url,
               size: snapshot._delegate.bytesTransferred,
               fileType: fileType
-          })
-          setUploading(false)
-        setFile(null)
-        setOpen(false)
-          .then(() => {
+          }).then(() => {
               console.log("File metadata added to Firestore successfully!");
+              setUploading(false)
+              setFile(null)
+              setOpen(false)
           }).catch((error) => {
               console.error("Error adding file metadata to Firestore: ", error);
           });
@@ -58,23 +57,6 @@ const Sidebar = () => {
   }).catch((error) => {
       console.error("Error uploading file: ", error);
   });
-  
-  
-
-    // storage.ref(`files/${file.name}`).put(file).then(snapshot=>{
-    //   storage.ref("files").child(file.name).getDownloadURL().then(url=>{
-    //     db.collection("myfiles").add({
-    //       timestamp:firebase.firestore.FieldValue.serverTimestamp(),
-    //       filename:file.name,
-    //       fileUrl:url,
-    //       size:snapshot._delegate.bytesTransferred,
-          
-    //     })
-    //     setUploading(false)
-    //     setFile(null)
-    //     setOpen(false)
-    //   })
-    // })
   }
 
   const handleOpen = () => {
@@ -105,8 +87,8 @@ const Sidebar = () => {
     </Modal>
     <div className='sidebar'> 
       <div className="sidebar_btn">
-      <button onClick={handleOpen} class="flex items-center space-x-2 px-4 py-2 rounded-md text-gray-600 hover:bg-gray-100 focus:outline-none focus:bg-gray-100">
-    <svg class="h-6 w-6 fill-current" viewBox="0 0 24 24" focusable="false">
+      <button onClick={handleOpen} className="flex items-center space-x-2 px-4 py-2 rounded-md text-gray-600 hover:bg-gray-100 focus:outline-none focus:bg-gray-100">
+    <svg className="h-6 w-6 fill-current" viewBox="0 0 24 24" focusable="false">
         <path d="M20 13h-7v7h-2v-7H4v-2h7V4h2v7h7v2z"></path>
     </svg>
     <span>New </span>

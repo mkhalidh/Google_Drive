@@ -1,4 +1,3 @@
-import React from 'react'
 import logo from '../public/fav.png'
 import SearchIcon from '@mui/icons-material/Search';
 import FormatAlignCenterIcon from '@mui/icons-material/FormatAlignCenter';

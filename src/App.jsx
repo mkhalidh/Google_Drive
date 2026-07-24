@@ -1,10 +1,8 @@
-import { useState } from "react"
 import Data from "./Data"
 import Header from "./Header"
 // import Side from "./Side"
 import Sidebar from "./Sidebar"
 
-import logo from '../public/fav.png'
 // import { auth, provider } from "./firebase"
 
 

@@ -1,5 +1,3 @@
-import React from 'react';
-
 const Side = () => {
   return (
     <div className="h-screen w-64 bg-gray-800 text-white">
