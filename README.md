@@ -1,8 +1,8 @@
-# Vault
+# Drive
 
-A private, personal file drive. Sign in with Google and everything you
-deposit is yours alone — no shared folder, no other account can see or touch
-your files.
+A Google Drive clone with real per-account isolation. Sign in with Google
+and everything you upload is yours alone — no shared folder, no other
+account can see or touch your files.
 
 **🔗 Live demo:** https://google-drive-clone-inky-iota.vercel.app
 
@@ -12,7 +12,7 @@ Most "Google Drive clone" tutorial projects skip the part that actually
 makes a drive personal: real per-account isolation. This one doesn't — every
 file is scoped to the Google account that uploaded it, enforced by Firestore
 and Storage security rules (not just hidden in the UI), so signing in with a
-different account gets you an empty vault, not someone else's files.
+different account gets you an empty drive, not someone else's files.
 
 ## Features
 
@@ -22,7 +22,7 @@ different account gets you an empty vault, not someone else's files.
 - Live file list backed by Firestore (`onSnapshot`), updates in real time
   as uploads land
 - Search your own files by name
-- Download any file you've deposited
+- Download any file you've uploaded
 - Running total of files and storage used
 
 ## Tech stack
