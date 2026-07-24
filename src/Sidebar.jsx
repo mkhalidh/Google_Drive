@@ -1,151 +1,149 @@
 import { useState } from 'react'
 import './css/sidebar.css'
-import MobileScreenShareIcon from '@mui/icons-material/MobileScreenShare';
-import DevicesIcon from '@mui/icons-material/Devices';
-import PeopleOutlineIcon from '@mui/icons-material/PeopleOutline';
-import QueryBuilderIcon from '@mui/icons-material/QueryBuilder';
-import StarOutlineIcon from '@mui/icons-material/StarOutline';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import AllInboxIcon from '@mui/icons-material/AllInbox';
 import CloudQueueIcon from '@mui/icons-material/CloudQueue';
+import CloseIcon from '@mui/icons-material/Close';
 import { Modal } from '@mui/base';
 import { db, storage } from './firebase';
 
 import firebase from 'firebase';
 
-const Sidebar = () => {
+function formatBytes(bytes) {
+  if (!bytes) return "0 B"
+  const k = 1024
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i]
+}
 
-  const [open, setOpen] = useState(close)
+const Sidebar = ({ user, files }) => {
+
+  const [open, setOpen] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [uploadError, setUploadError] = useState(null)
   const [file, setFile] = useState(null)
+
   const handleClose = () => {
     setOpen(false);
+    setUploadError(null);
   }
 
-  const handleChange = (e)=>{
-    if(e.target.files[0]){
-        setFile(e.target.files[0])
+  const handleChange = (e) => {
+    if (e.target.files[0]) {
+      setFile(e.target.files[0])
     }
   }
 
-  const handleUpload = (e)=>{
+  const handleUpload = (e) => {
     e.preventDefault();
+    if (!file || !user) return;
     setUploading(true);
+    setUploadError(null);
 
-    storage.ref(`files/${file.name}`).put(file).then(snapshot => {
-      storage.ref("files").child(file.name).getDownloadURL().then(url => {
-          // Extract general file type
-          const fileType = file.type ? file.type.split('/')[0] : 'unknown'; // Get the first part of the MIME type
+    const storagePath = `files/${user.uid}/${file.name}`;
 
-          // Add metadata to Firestore
-          db.collection("myfiles").add({
-              timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-              filename: file.name,
-              fileUrl: url,
-              size: snapshot._delegate.bytesTransferred,
-              fileType: fileType
-          }).then(() => {
-              console.log("File metadata added to Firestore successfully!");
-              setUploading(false)
-              setFile(null)
-              setOpen(false)
-          }).catch((error) => {
-              console.error("Error adding file metadata to Firestore: ", error);
-          });
+    storage.ref(storagePath).put(file).then(snapshot => {
+      storage.ref(storagePath).getDownloadURL().then(url => {
+        const fileType = file.type ? file.type.split('/')[0] : 'unknown';
+
+        db.collection("myfiles").add({
+          uid: user.uid,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+          filename: file.name,
+          fileUrl: url,
+          size: snapshot._delegate.bytesTransferred,
+          fileType: fileType
+        }).then(() => {
+          setUploading(false)
+          setFile(null)
+          setOpen(false)
+        }).catch((error) => {
+          console.error("Error adding file metadata to Firestore: ", error);
+          setUploading(false);
+          setUploadError("Saved the file but couldn't record it. Try again.");
+        });
       }).catch((error) => {
-          console.error("Error getting download URL: ", error);
+        console.error("Error getting download URL: ", error);
+        setUploading(false);
+        setUploadError("Upload finished but the file link failed. Try again.");
       });
-  }).catch((error) => {
+    }).catch((error) => {
       console.error("Error uploading file: ", error);
-  });
+      setUploading(false);
+      setUploadError("Couldn't reach your vault. Check your connection and try again.");
+    });
   }
 
   const handleOpen = () => {
     setOpen(true);
   }
+
+  const totalBytes = files.reduce((sum, f) => sum + (f.data.size || 0), 0)
+
   return (
     <>
-    <Modal open={open} onClose={{handleClose}} className=''>
-      <div className="modal_pop">
-        <form action="">
-          <div className="close" onClick={handleClose}>X</div>
-          <div className="modalHeading">
-            <h3><b>Select the file you want to upload</b></h3>
+      <Modal open={open} onClose={handleClose}>
+        <div className="modal_pop">
+          <div className="modal_pop__header">
+            <h3 className="font-display text-lg text-paper-100">Deposit a file</h3>
+            <button onClick={handleClose} className="modal_pop__close" aria-label="Close">
+              <CloseIcon fontSize="small" />
+            </button>
           </div>
 
-          <div className="modalBody">
-            {
-              uploading ? (<p className='uploading'>Uploading</p>) : (
-                <>
-            <input type="file" onChange={handleChange} className='mt-1' />
-            <input type="submit" className='post__submit' onClick={handleUpload} />
-            </>
-              )
-            }
+          <form onSubmit={handleUpload} className="modal_pop__body">
+            {uploading ? (
+              <div className="modal_pop__uploading">
+                <div className="w-6 h-6 border-2 border-brass-500 border-t-transparent rounded-full animate-spin motion-reduce:animate-none" role="status" aria-label="Uploading" />
+                <p className="font-sans text-sm text-ink-500">Depositing…</p>
+              </div>
+            ) : (
+              <>
+                <input type="file" onChange={handleChange} className="modal_pop__input" />
+                {uploadError && (
+                  <p role="alert" className="font-sans text-sm text-rust-500 mt-2">{uploadError}</p>
+                )}
+                <input
+                  type="submit"
+                  value="Deposit"
+                  disabled={!file}
+                  className="post__submit"
+                />
+              </>
+            )}
+          </form>
+        </div>
+      </Modal>
+
+      <aside className="sidebar">
+        <div className="sidebar_btn">
+          <button onClick={handleOpen} className="sidebar__deposit">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M20 13h-7v7h-2v-7H4v-2h7V4h2v7h7v2z"></path>
+            </svg>
+            <span>Deposit a file</span>
+          </button>
+        </div>
+
+        <div className="sidebar__options">
+          <div className="sidebar__option sidebar__option-active">
+            <AllInboxIcon fontSize="small" />
+            <span>My Vault</span>
           </div>
-        </form>
-      </div>
-    </Modal>
-    <div className='sidebar'> 
-      <div className="sidebar_btn">
-      <button onClick={handleOpen} className="flex items-center space-x-2 px-4 py-2 rounded-md text-gray-600 hover:bg-gray-100 focus:outline-none focus:bg-gray-100">
-    <svg className="h-6 w-6 fill-current" viewBox="0 0 24 24" focusable="false">
-        <path d="M20 13h-7v7h-2v-7H4v-2h7V4h2v7h7v2z"></path>
-    </svg>
-    <span>New </span>
-</button>
+        </div>
 
-  
-      </div>
+        <hr className="sidebar__rule" />
 
-      <div className="sidebar__options sidebar__options-active">
-          <div className="sidebar__option sidebar__option-Active">
-            <MobileScreenShareIcon/>
-            <span className='text-[#1366d2] '><b>My Drive</b></span>
-          </div>
-
-          <div className="sidebar__option">
-            <DevicesIcon/>
-            <span>Computers</span>
-          </div>
-
-          <div className="sidebar__option">
-            <PeopleOutlineIcon/>
-            <span>Share with me</span>
-          </div>
-
-          <div className="sidebar__option">
-            <QueryBuilderIcon/>
-            <span>Recent</span>
-          </div>
-
-          <div className="sidebar__option">
-            <MobileScreenShareIcon/>
-            <span>My Drive</span>
-          </div>
-
-          <div className="sidebar__option">
-            <StarOutlineIcon/>
-            <span>Starred</span>
-          </div>
-
-          <div className="sidebar__option">
-            <DeleteOutlineIcon/>
-            <span>Trash</span>
-          </div>
-
-      </div>
-      <hr className='w-[320px]'/>
-      <div className="sidebar__options">
-          <div className="sidebar__option">
-            <CloudQueueIcon/>
+        <div className="sidebar__storage">
+          <div className="sidebar__storage-label">
+            <CloudQueueIcon fontSize="small" />
             <span>Storage</span>
           </div>
-          <div className="progress_bar">
-            <progress size="tiny" value="50" max="100"/>
-            <span>6.45 Gb of 15 Gb is used</span>
-          </div>
-          </div>
-    </div>
+          <p className="font-mono text-xs text-ink-500 mt-2">
+            {files.length} {files.length === 1 ? 'file' : 'files'} · {formatBytes(totalBytes)} deposited
+          </p>
+        </div>
+      </aside>
     </>
   )
 }

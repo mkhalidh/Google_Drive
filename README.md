@@ -1,104 +1,119 @@
+# Vault
 
+A private, personal file drive. Sign in with Google and everything you
+deposit is yours alone — no shared folder, no other account can see or touch
+your files.
 
-# Google Drive Clone
+**🔗 Live demo:** https://google-drive-clone-inky-iota.vercel.app
 
-This project is a clone of Google Drive, where users can upload and download files, with files stored on Firebase. It also provides real-time updates on file upload progress, file size, and timestamps of last modification.
+## Why this exists
+
+Most "Google Drive clone" tutorial projects skip the part that actually
+makes a drive personal: real per-account isolation. This one doesn't — every
+file is scoped to the Google account that uploaded it, enforced by Firestore
+and Storage security rules (not just hidden in the UI), so signing in with a
+different account gets you an empty vault, not someone else's files.
 
 ## Features
 
-- **File Upload:** Users can upload files to Firebase Storage.
-- **File Download:** Users can download files from Firebase Storage.
-- **File Info:** Displays file name, size, and last modified timestamp.
+- Google Sign-In — the only way in, no anonymous access
+- Upload files straight to your own private space (Firebase Storage,
+  path-scoped per user)
+- Live file list backed by Firestore (`onSnapshot`), updates in real time
+  as uploads land
+- Search your own files by name
+- Download any file you've deposited
+- Running total of files and storage used
 
+## Tech stack
 
+| Layer | Technology |
+|---|---|
+| Frontend | React 18, Vite, Tailwind CSS, MUI icons |
+| Backend | Firebase (Authentication, Firestore, Storage) — no custom server |
+| Hosting | Vercel |
 
-## Tech Stack
+There's no backend server in this project at all — the browser talks
+directly to Firebase, with security enforced by Firestore/Storage rules
+rather than an API layer.
 
-- **Frontend:** React.js, Tailwind CSS
-- **Backend:** Firebase (Firestore & Storage)
-- **Icons:** Material UI Icons
+## Data model & security rules
 
+Every file's Firestore document carries a `uid` field (the uploader's
+Firebase Auth UID), and every Storage object lives under `files/{uid}/...`.
+Both are enforced server-side, not just filtered client-side:
 
-## Setup and Installation
+- `firestore.rules` — a `myfiles` document can only be read/written by the
+  UID it belongs to
+- `storage.rules` — a `files/{uid}/...` path can only be read/written by
+  that same UID
 
-To get started with the project, follow these steps:
+If you fork this and stand up your own Firebase project, deploy both with
+the Firebase CLI:
 
-### 1. Clone the Repository
+```bash
+firebase deploy --only firestore:rules,storage:rules
+```
+
+(or paste their contents into Firebase Console → Firestore/Storage → Rules
+directly).
+
+## Running it locally
+
+**Prerequisites:** Node.js ≥ 18, a Firebase project with Authentication
+(Google provider enabled), Firestore, and Storage turned on.
 
 ```bash
 git clone https://github.com/mkhalidh/Google_Drive.git
-```
-
-### 2. Install Dependencies
-
-Navigate to the project folder and install the required dependencies:
-
-```bash
 cd Google_Drive
 npm install
 ```
 
-### 3. Set Up Firebase
-
-- Create a new Firebase project in the [Firebase Console](https://console.firebase.google.com/).
-- Enable Firestore and Firebase Storage in your Firebase project.
-- Copy the Firebase configuration object from the Firebase console.
-
-### 4. Configure Firebase in Your Project
-
-Create a `.env` file in the root directory and add the Firebase configuration like below:
+Create `.env` from `.env.example` and fill in your Firebase project's web
+config (Firebase Console → Project Settings → General → Your apps):
 
 ```env
-REACT_APP_API_KEY=your_firebase_api_key
-REACT_APP_AUTH_DOMAIN=your_project_id.firebaseapp.com
-REACT_APP_PROJECT_ID=your_project_id
-REACT_APP_STORAGE_BUCKET=your_project_id.appspot.com
-REACT_APP_MESSAGING_SENDER_ID=your_messaging_sender_id
-REACT_APP_APP_ID=your_app_id
+VITE_FIREBASE_API_KEY=
+VITE_FIREBASE_AUTH_DOMAIN=
+VITE_FIREBASE_PROJECT_ID=
+VITE_FIREBASE_STORAGE_BUCKET=
+VITE_FIREBASE_MESSAGING_SENDER_ID=
+VITE_FIREBASE_APP_ID=
+VITE_FIREBASE_MEASUREMENT_ID=
 ```
 
-Alternatively, you can directly edit the `firebase.js` file with your configuration details.
-
-### 5. Run the Project
-
-Once you've set up Firebase, run the app locally:
+Then:
 
 ```bash
-npm start
+npm run dev       # http://localhost:5173
 ```
 
-This will start the development server and open the app in your default web browser.
+## Deployment
 
-## How It Works
+Deployed to Vercel, with the Firebase config above set as Vercel
+environment variables (Project Settings → Environment Variables). CI/CD
+runs via GitHub Actions:
 
-1. **Uploading Files:**
-   - When a user selects a file to upload, it is uploaded to Firebase Storage.
-   - The file metadata (e.g., file name, size, URL, and type) is stored in Firebase Firestore.
-   - The file is then displayed in the app's file list, showing its name, size, and last modified time.
+- `.github/workflows/ci.yml` — lint + build on every push/PR
+- `.github/workflows/deploy.yml` — deploys to Vercel on every push to `main`
+  (needs `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` repo secrets)
 
-2. **Downloading Files:**
-   - Users can click the "Download here" button next to a file, which will initiate the file download from Firebase Storage.
+## Project structure
 
-3. **File Information:**
-   - The app displays the file name, owner, last modified date, and size for each file in the user's drive.
-   - Files are categorized by their type (e.g., images, documents).
-
-## File Structure
-
-- **`App.js`**: Main component that includes header, sidebar, and file data.
-- **`Data.js`**: Component responsible for displaying uploaded files, including details like name, size, and last modified time.
-- **`Header.js`**: Header component with app logo, search bar, and user options.
-- **`Sidebar.js`**: Sidebar navigation with file storage options, upload button, and progress bar.
-- **`firebase.js`**: Firebase configuration and initialization.
-- **`index.js`**: Entry point for React, where the App component is rendered.
-
-## Future Improvements
-
-- Add **Google Authentication** for user login (currently commented out).
-- Implement a **progress bar** for file uploads.
-- Improve **file management** features such as creating folders, organizing files, etc.
+```
+Google_Drive/
+├── src/
+│   ├── App.jsx           # Auth state machine (sign-in/out), top-level layout
+│   ├── Header.jsx         # Search, account, sign-out
+│   ├── Sidebar.jsx        # Upload flow, storage summary
+│   ├── Data.jsx            # Per-user file list
+│   ├── firebase.js         # Firebase init (reads VITE_FIREBASE_* env vars)
+│   └── css/                 # Component styles
+├── firestore.rules          # Per-user Firestore access rules
+├── storage.rules             # Per-user Storage access rules
+└── .github/workflows/         # CI/CD
+```
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
+MIT

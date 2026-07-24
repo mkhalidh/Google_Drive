@@ -2,38 +2,41 @@
 @tailwind components;
 @tailwind utilities;
 
-*{
-  margin: 0px;
+* {
+  margin: 0;
+  box-sizing: border-box;
 }
 
-.App{
+body {
+  background-color: #16181C;
+  font-family: "Inter", system-ui, sans-serif;
+}
+
+.App {
   display: grid;
-  grid-template-columns: 300px auto 50px;
+  grid-template-columns: 280px auto;
+  min-height: calc(100vh - 60px);
 }
 
-.loginWrap img{
-  width: 100px;
+@media (max-width: 720px) {
+  .App {
+    grid-template-columns: 1fr;
+  }
 }
 
-.loginWrap{
-  background: #fff;
-  padding: 20px;
-  width: 500px;
-  margin: 0px auto;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-top: 100px;
-
+@keyframes deposit-settle {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.loginWrap button{
-  width: 100%;
-  background-color: #2381fa;
-  padding: 10px 20px;
-  color: #fff;
-  text-transform: uppercase;
-  letter-spacing: 5px;
-  font-size: 16px;
-  margin-top: 10px ;
+@media (prefers-reduced-motion: no-preference) {
+  .ledger-row {
+    animation: deposit-settle 0.35s ease-out both;
+  }
 }

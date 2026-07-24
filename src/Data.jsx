@@ -1,130 +1,84 @@
-import { useEffect, useState } from 'react'
-import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
-import ListIcon from '@mui/icons-material/List';
-import InfoIcon from '@mui/icons-material/Info';
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
-import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
+import ImageIcon from '@mui/icons-material/Image';
+import MovieIcon from '@mui/icons-material/Movie';
+import DownloadIcon from '@mui/icons-material/Download';
 
 import './css/data.css'
-import { db } from './firebase';
 
-const Data = () => {
-    const[files, setFiles]=useState([]);
-    useEffect(()=>{
-        db.collection("myfiles").onSnapshot(snapshot=>{
-            setFiles(snapshot.docs.map(doc=>({
-                id:doc.id,
-                data:doc.data()
-            })))
-        })
-    },[])
-
-    function formatBytes(bytes,decimal = 2){
-        if(bytes===0)return "0 Bytes";
-        const k =1024;
-        const dm = decimal<0 ? 0 : decimal;
-        const size = ['Bytes','KB', 'MB', 'GB', 'TB', 'PB', 'EB',   'ZB', 'YB'];
-
-        const i  = Math.floor(Math.log(bytes)/Math.log(k));
-
-        return parseFloat((bytes / Math.pow(k,i)).toFixed(dm))+ ' '+ size[i];
-    }
-
-
-    // const handleDownload = (fileUrl, filename) => {
-    //     // Create a hidden anchor element
-    //     const link = document.createElement('a');
-    //     link.href = fileUrl;
-    //     link.download = filename;
-    
-    //     // Append the anchor element to the document body
-    //     document.body.appendChild(link);
-    
-    //     // Trigger a click event on the anchor element
-    //     link.click();
-    
-    //     // Remove the anchor element from the document body
-    //     document.body.removeChild(link);
-    // };
-    
-  return (
-
-
-    <div className='data '>
-        <div className="data__header ">
-            <div className="data__headerLeft">
-                <p>My Drive</p>
-                <ArrowDropDownIcon/>
-            </div>
-
-            <div className="header__Right">
-                <ListIcon/>
-                <InfoIcon/>
-            </div>
-        </div>
-
-        <div className="data__contain">
-            <div className="data__grid flex items-center justify-center">
-                {
-                    files.map((file)=>{
-                        return(
-                <div className="data__file items-center justify-center" key={file.id}>
-                    
-                    <div className="image-container">
-                    {
-    ( file.data.fileType != "image") ? (
-        <InsertDriveFileIcon />
-    ) : (
-        <img src={file.data.fileUrl} alt={file.data.filename} className="centered-image" />
-    )
+function formatBytes(bytes, decimal = 1) {
+    if (!bytes) return "0 B"
+    const k = 1024
+    const dm = decimal < 0 ? 0 : decimal
+    const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
+    const i = Math.floor(Math.log(bytes) / Math.log(k))
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i]
 }
 
-                    <a href={file.data.fileUrl} target='_blank' download={file.data.filename} >
-                        <button>Download here </button></a>
+function formatDate(timestamp) {
+    if (!timestamp?.seconds) return '—'
+    return new Date(timestamp.seconds * 1000).toLocaleDateString(undefined, {
+        year: 'numeric', month: 'short', day: 'numeric'
+    })
+}
 
-                </div>
-                    {/* <InsertDriveFileIcon/> */}
-                    <p>{file.data.filename}</p>
-                </div>
-                        )
-                        
-                    })
-                }
+function FileIcon({ fileType }) {
+    if (fileType === 'image') return <ImageIcon />
+    if (fileType === 'video') return <MovieIcon />
+    return <InsertDriveFileIcon />
+}
 
-               
+const Data = ({ files, loading, searchActive }) => {
+    return (
+        <main className="data">
+            <div className="data__header">
+                <p className="font-display text-2xl text-paper-100">
+                    {searchActive ? 'Search results' : 'Your vault'}
+                </p>
+                <p className="font-mono text-xs text-ink-500">
+                    {files.length} {files.length === 1 ? 'item' : 'items'}
+                </p>
             </div>
-            <div className="data__list">
-                <div className="detailsRow">
-                    <p><b>Name</b><ArrowDownwardIcon/></p>
-                    <p><b>Owner</b></p>
-                    <p><b>Last Modified</b></p>
-                    <p><b>File Size</b></p>
-                </div>
 
-                {
-                    files.map((file)=>{
-                        return(
-                <div className="detailsRow" key={file.id}>
-
-                    <p>
-                        <a href={file.data.fileUrl} target='_blank' download={file.data.filename} >
-                            
-                           { console.log(file.data.fileUrl)}
-                           {/* <img src={file.data.fileUrl} alt={file.data.filename}/> */}
-                        <InsertDriveFileIcon/>{file.data.filename}
-                        </a>
-                        </p>
-                    <p>Me</p>
-                    <p>{new Date(file.data.timestamp?.seconds*1000).toUTCString()}</p>
-                    <p>{formatBytes(file.data.size)}</p>
+            {loading ? (
+                <div className="data__empty">
+                    <div className="w-6 h-6 border-2 border-brass-500 border-t-transparent rounded-full animate-spin motion-reduce:animate-none" role="status" aria-label="Loading files" />
                 </div>
-                     ) })
-                }
-                
-            </div>
-        </div>
-        </div>
-  )
+            ) : files.length === 0 ? (
+                <div className="data__empty">
+                    <p className="font-display text-xl text-paper-100 mb-2">
+                        {searchActive ? 'No files match your search' : 'Your vault is empty'}
+                    </p>
+                    <p className="font-sans text-sm text-ink-500">
+                        {searchActive ? 'Try a different name.' : 'Deposit your first file to begin.'}
+                    </p>
+                </div>
+            ) : (
+                <ul className="data__ledger">
+                    {files.map((file) => (
+                        <li className="ledger-row" key={file.id}>
+                            <span className="ledger-row__tag">
+                                <FileIcon fileType={file.data.fileType} />
+                            </span>
+                            <span className="ledger-row__name">{file.data.filename}</span>
+                            <span className="ledger-row__meta font-mono">{formatDate(file.data.timestamp)}</span>
+                            <span className="ledger-row__meta font-mono">{formatBytes(file.data.size)}</span>
+                            <a
+                                href={file.data.fileUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                download={file.data.filename}
+                                className="ledger-row__download"
+                                aria-label={`Download ${file.data.filename}`}
+                                title="Download"
+                            >
+                                <DownloadIcon fontSize="small" />
+                            </a>
+                        </li>
+                    ))}
+                </ul>
+            )}
+        </main>
+    )
 }
 
 export default Data

@@ -1,39 +1,45 @@
-import logo from '../public/fav.png'
 import SearchIcon from '@mui/icons-material/Search';
-import FormatAlignCenterIcon from '@mui/icons-material/FormatAlignCenter';
-import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
-import SettingsIcon from '@mui/icons-material/Settings';
-
+import LogoutIcon from '@mui/icons-material/Logout';
 import { Avatar } from '@mui/material';
 
-import AppsIcon from '@mui/icons-material/Apps';
-
-
 import './css/Header.css';
-const Header = ({photoUrl}) => {
+
+const Header = ({ user, onSignOut, search, onSearchChange }) => {
   return (
-    <>
-    <div className="header grid">
-      <div className="header__logo flex items-center">
-        <img className='w-[40px]' src={logo} alt="google drive logo"  />
-        <span className='text-[22px] text-gray-500 ml-[10px]'>Drive</span>
-      </div>
-      <div className="header__search flex items-center w-[700px] bg-[#F5F5F5] p-[12px] rounded-xl ">
-        <SearchIcon/>
-        <input type="text" placeholder='Search in Drive' />
-        <FormatAlignCenterIcon/>
-      </div>
-      <div className="header__icons">
-        <span className='ic1'><HelpOutlineIcon/>
-        <SettingsIcon/></span>
-        <span>
-          <AppsIcon/>
-          <Avatar src={photoUrl}/>
-        </span>
+    <header className="header">
+      <div className="header__brand">
+        <span className="header__mark">V</span>
+        <span className="font-display text-xl text-paper-100">Vault</span>
       </div>
 
-    </div>
-    </>
+      <div className="header__search">
+        <SearchIcon className="text-ink-500" fontSize="small" />
+        <input
+          type="text"
+          placeholder="Search your files"
+          value={search}
+          onChange={(e) => onSearchChange(e.target.value)}
+          aria-label="Search your files"
+        />
+      </div>
+
+      <div className="header__account">
+        <span className="font-sans text-sm text-ink-500 hidden sm:inline">{user.displayName}</span>
+        <Avatar
+          src={user.photoURL}
+          alt={user.displayName || 'Account'}
+          sx={{ width: 32, height: 32 }}
+        />
+        <button
+          onClick={onSignOut}
+          className="header__signout"
+          aria-label="Sign out"
+          title="Sign out"
+        >
+          <LogoutIcon fontSize="small" />
+        </button>
+      </div>
+    </header>
   )
 }
 
